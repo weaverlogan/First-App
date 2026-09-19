@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finance Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#666e73; --panel:#FFFFFF; --ink:#142335; --muted:#586878; --line:#D3DDE3; --soft:#E6EDF0;
+  --low:#1E7B78; --mid:#C2922B; --high:#A34766; --focus:#2563B0; --accent:#1E7B78;
+  --serif:'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --sans:'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1926; --panel:#132334; --ink:#E4ECF2; --muted:#9BAEBD; --line:#274058; --soft:#1B2F44;
+    --low:#4DB5AF; --mid:#E0B458; --high:#DC7F9B; --focus:#7FB2F0; --accent:#4DB5AF;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1926; --panel:#132334; --ink:#E4ECF2; --muted:#9BAEBD; --line:#274058; --soft:#1B2F44;
+  --low:#4DB5AF; --mid:#E0B458; --high:#DC7F9B; --focus:#7FB2F0; --accent:#4DB5AF;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:border-box;}
+[hidden]{display:none !important;}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--sans);-webkit-text-size-adjust:100%;}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px;}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:-0.005em;}
+h1{font-size:clamp(28px,4.2vw,40px);line-height:1.12;}
+h2{font-size:21px;line-height:1.25;}
+h3{font-size:19px;line-height:1.3;}
+p{margin:0 0 12px;}
+.lede{max-width:62ch;color:var(--muted);margin-top:10px;font-size:17px;}
+.app{display:grid;grid-template-columns:1fr;gap:28px;margin-top:28px;}
+@media (min-width:900px){
+  .app{grid-template-columns:minmax(320px,380px) minmax(0,1fr);gap:36px;align-items:start;}
+  .inputs{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));}
+  .wrap{padding-bottom:64px;}
+  .bar{display:none !important;}
+}
+
+/* inputs */
+.inputs{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;}
+.field{margin-top:18px;}
+.field label,.field .lbl{display:block;font-weight:600;font-size:15px;margin-bottom:6px;}
+.hint{font-size:13px;color:var(--muted);margin:5px 0 0;}
+input[type=text],input[type=number]{
+  width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:10px 12px;
+}
+.money{position:relative;}
+.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+.money input{padding-left:26px;}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+.opts{display:grid;gap:8px;}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;}
+.opt input{margin:4px 0 0;accent-color:var(--accent);}
+.opt b{display:block;font-weight:600;font-size:15px;}
+.opt small{display:block;color:var(--muted);font-size:13px;line-height:1.35;}
+.opt:has(input:checked){border-color:var(--accent);background:var(--soft);}
+.opt:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px;}
+.privacy{font-size:13px;color:var(--muted);margin:20px 0 0;}
+
+/* results */
+.note{font-size:14px;color:var(--muted);border-left:3px solid var(--mid);padding:2px 0 2px 12px;margin-bottom:18px;}
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;}
+.headline{font-family:var(--serif);font-size:clamp(22px,3vw,28px);line-height:1.3;margin:0 0 10px;font-weight:400;}
+.headline strong{font-weight:600;}
+.range{color:var(--muted);margin:0 0 6px;}
+.plot{display:block;width:100%;height:auto;margin-top:14px;}
+.plot text{fill:var(--muted);font:500 12px var(--sans);}
+.plot .axis{stroke:var(--line);stroke-width:1.5;}
+.plot .tick{stroke:var(--line);stroke-width:1.5;}
+.plot .curve{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:.55;}
+.plot .ci{fill:var(--ink);}
+.plot .med{fill:var(--panel);stroke:var(--ink);stroke-width:3;}
+.plot .ref{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 4;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--muted);margin-top:6px;}
+.legend span{display:inline-flex;align-items:center;gap:7px;}
+.sw-med{width:12px;height:12px;border-radius:50%;border:3px solid var(--ink);display:inline-block;}
+.sw-ci{width:20px;height:6px;border-radius:3px;background:var(--ink);display:inline-block;}
+.sw-ref{width:0;height:14px;border-left:2px dashed var(--muted);display:inline-block;}
+.cat{display:flex;gap:10px;align-items:flex-start;margin:18px 0 0;}
+.dot{flex:none;width:12px;height:12px;border-radius:50%;margin-top:7px;}
+.conf{margin:10px 0 0;color:var(--muted);font-size:15px;}
+.sec{margin-top:34px;}
+.sec p{max-width:68ch;}
+.fine{font-size:13px;color:var(--muted);}
+.levers{list-style:none;margin:12px 0 0;padding:0;}
+.levers li{padding:12px 0;border-top:1px solid var(--line);}
+.levers li:last-child{border-bottom:1px solid var(--line);}
+.lv-row{display:flex;justify-content:space-between;gap:14px;align-items:baseline;}
+.lv-delta{font-weight:600;white-space:nowrap;}
+.lv-delta.flat{font-weight:400;color:var(--muted);}
+.track{height:6px;border-radius:3px;background:var(--soft);margin-top:8px;overflow:hidden;}
+.fill{height:100%;background:var(--low);border-radius:3px;}
+@media (prefers-reduced-motion:no-preference){ .fill{transition:width .25s ease;} }
+.empty,.fitting{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:26px;color:var(--muted);}
+.fitting progress{width:100%;height:8px;accent-color:var(--accent);margin-top:10px;}
+
+/* details */
+.more{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
+.more summary{cursor:pointer;font-weight:600;padding:6px 0;}
+.more-body{max-width:70ch;padding-top:8px;}
+.more-body h3{margin:22px 0 8px;font-size:18px;}
+.btn{font:inherit;font-weight:600;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;}
+.btn:hover{background:var(--soft);}
+.msg{font-size:14px;margin-top:10px;}
+.msg.err{color:var(--high);}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;background:var(--soft);padding:1px 5px;border-radius:4px;}
+
+/* mobile summary bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center;justify-content:space-between;}
+.bar p{margin:0;font-size:14px;}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Finance Calculator</h1>
+    <p class="lede">Enter a few numbers. A Bayesian model compares you with a set of reference households and estimates how likely financial strain is over the next year, with its uncertainty shown rather than hidden.</p>
+  </header>
+
+  <div class="app">
+    <section class="inputs" aria-labelledby="in-h">
+      <h2 id="in-h">Your numbers</h2>
+
+      <div class="field">
+        <label for="income">Monthly take-home income</label>
+        <div class="money"><span>$</span><input id="income" type="text" inputmode="decimal" autocomplete="off" value="4,200"></div>
+        <p class="hint">After taxes, all sources.</p>
+      </div>
+      <div class="field">
+        <label for="expenses">Monthly essential spending</label>
+        <div class="money"><span>$</span><input id="expenses" type="text" inputmode="decimal" autocomplete="off" value="3,100"></div>
+        <p class="hint">Housing, food, utilities, transport, insurance, minimum payments.</p>
+      </div>
+      <div class="field">
+        <label for="savings">Savings you can reach quickly</label>
+        <div class="money"><span>$</span><input id="savings" type="text" inputmode="decimal" autocomplete="off" value="3,500"></div>
+        <p class="hint">Checking, savings and cash. Leave out retirement accounts.</p>
+      </div>
+      <div class="field">
+        <label for="debt">Total debt, excluding a mortgage</label>
+        <div class="money"><span>$</span><input id="debt" type="text" inputmode="decimal" autocomplete="off" value="12,000"></div>
+        <p class="hint">Cards, car loans, student loans, personal loans.</p>
+      </div>
+      <div class="field">
+        <label for="debtPay">Monthly debt payments</label>
+        <div class="money"><span>$</span><input id="debtPay" type="text" inputmode="decimal" autocomplete="off" value="380"></div>
+      </div>
+      <div class="field">
+        <label for="deps">People who depend on your income</label>
+        <input id="deps" type="number" min="0" max="6" step="1" value="1" inputmode="numeric">
+        <p class="hint">Children, partner, relatives. Not counting yourself.</p>
+      </div>
+      <div class="field" role="radiogroup" aria-labelledby="vol-l">
+        <span class="lbl" id="vol-l">How steady is your income?</span>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="vol" value="0.1"><span><b>Very steady</b><small>Same pay every period</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.3" checked><span><b>Mostly steady</b><small>Small changes month to month</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.55"><span><b>Variable</b><small>Commission, tips or shifting hours</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.8"><span><b>Irregular</b><small>Gig, seasonal or project work</small></span></label>
+        </div>
+      </div>
+      <p class="privacy">Everything is calculated inside this page. Nothing you type is sent anywhere.</p>
+    </section>
+
+    <section id="results" aria-label="Your estimate">
+      <div id="dataNote" class="note"></div>
+      <div id="fitting" class="fitting" role="status">
+        <span id="fitTxt">Learning from the reference households</span> <span id="progTxt">0%</span>
+        <progress id="prog" max="1" value="0"></progress>
+      </div>
+      <div id="out" hidden></div>
+      <div id="sr" class="sr" aria-live="polite"></div>
+
+      <details class="more">
+        <summary>How the estimate is made, and how to use real data</summary>
+        <div class="more-body">
+          <h3>The model</h3>
+          <p>This is a Bayesian nonparametric model: a Dirichlet process mixture used as a profile regression. Each household is assumed to belong to a hidden group. Every group has its own typical finances and its own chance of financial strain.</p>
+          <p>The number of groups is not fixed in advance. A Dirichlet process (concentration 1) lets the data decide, and always leaves room for a brand-new group when someone matches nobody well. The model is fitted by collapsed Gibbs sampling, with Normal–Gamma priors on the finances and a Beta prior on each group's strain rate.</p>
+          <p>Your estimate averages over 60 posterior samples of the grouping. The range therefore reflects two kinds of doubt: which group you belong to, and how risky each group really is. Profiles far from every group get wider ranges automatically.</p>
+          <p class="fine" id="modelStats"></p>
+
+          <h3>What financial strain means</h3>
+          <p>In the demo data it means being unable to absorb an unexpected cost of about one month of essential spending, or falling behind on bills, at some point within twelve months. If you load your own file, the outcome is whatever your file records.</p>
+
+          <h3>Use your own reference data</h3>
+          <p>The demo households are simulated, so results illustrate the method only. To make them meaningful, load a CSV of real households with a header row and these columns:</p>
+          <p><code>income, expenses, savings, debt, debt_payment, dependents, variability, insecure</code></p>
+          <p class="fine">Income, expenses and debt_payment are monthly dollars. Savings and debt are total dollars. Variability runs from 0 (very steady) to 1 (irregular). Insecure is 1 if the household experienced strain and 0 if not. Use plain numbers without commas or symbols. Files with more than 2,000 rows are randomly thinned to keep the page responsive. The file is read on this device only.</p>
+          <p><input id="file" type="file" accept=".csv,text/csv" aria-label="Choose a CSV file"></p>
+          <p><button class="btn" id="resetDemo" type="button">Use the demo data again</button></p>
+          <p class="msg" id="upMsg" role="status"></p>
+          <p class="fine">This tool is for education. It is not financial advice.</p>
+        </div>
+      </details>
+    </section>
+  </div>
+</main>
+
+<div class="bar" id="bar" hidden>
+  <p id="barTxt"></p>
+  <button class="btn" id="barBtn" type="button">See details</button>
+</div>
+
+<script>
+"use strict";
+/* ---------- utilities ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (x,a,b) => Math.min(b, Math.max(a,x));
+const sigmoid = z => 1/(1+Math.exp(-z));
+const fmtUSD = n => '$' + Math.round(n).toLocaleString('en-US');
+const pct = x => Math.round(x*100) + '%';
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+let rng = mulberry32(1);
+function randn(){let u=0;while(u===0)u=rng();const v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function gammaSample(k){
+  if(k<1) return gammaSample(k+1)*Math.pow(rng(),1/k);
+  const d=k-1/3,c=1/Math.sqrt(9*d);
+  for(;;){
+    let x,v;
+    do{x=randn();v=1+c*x;}while(v<=0);
+    v=v*v*v;const u=rng();
+    if(u<1-0.0331*x*x*x*x) return d*v;
+    if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v))) return d*v;
+  }
+}
+function betaSample(a,b){const x=gammaSample(a),y=gammaSample(b);return x/(x+y);}
+const LG=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+function lgamma(x){let y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);let ser=1.000000000190015;for(let j=0;j<6;j++){y+=1;ser+=LG[j]/y;}return -tmp+Math.log(2.5066282746310005*ser/x);}
+
+/* ---------- features ---------- */
+const D = 7;
+function toFeatures(r){
+  const inc=Math.max(r.income,1), exp=Math.max(r.expenses,0);
+  return [
+    Math.log(inc),
+    clamp(exp/inc,0.05,1.8),
+    Math.log1p(Math.max(r.savings,0)/Math.max(exp,1)),
+    clamp(r.debtPay/inc,0,0.8),
+    Math.log1p(Math.max(r.debt,0)/(12*inc)),
+    clamp(r.deps,0,6),
+    clamp(r.vol,0,1)
+  ];
+}
+
+/* ---------- simulated reference households ---------- */
+const ARCH=[
+  {w:.22,inc:7200,er:.45,run:12, dsr:.05,dti:.35,dep:1,vol:.10},
+  {w:.25,inc:4500,er:.75,run:1.5,dsr:.18,dti:.80,dep:2,vol:.30},
+  {w:.15,inc:2400,er:.90,run:.5, dsr:.12,dti:.60,dep:2,vol:.40},
+  {w:.12,inc:3800,er:.70,run:2,  dsr:.10,dti:.40,dep:1,vol:.75},
+  {w:.12,inc:6500,er:.60,run:2.5,dsr:.30,dti:2.0,dep:2,vol:.15},
+  {w:.14,inc:3000,er:.60,run:8,  dsr:.02,dti:.10,dep:0,vol:.05}
+];
+function synth(n,seed){
+  rng=mulberry32(seed);
+  const out=[];
+  for(let i=0;i<n;i++){
+    let u=rng(),a=0;
+    while(a<ARCH.length-1&&u>ARCH[a].w){u-=ARCH[a].w;a++;}
+    const A=ARCH[a];
+    const inc=A.inc*Math.exp(0.25*randn());
+    const er=clamp(A.er+0.08*randn(),0.2,1.4);
+    const run=A.run*Math.exp(0.6*randn());
+    const dsr=clamp(A.dsr+(0.3*A.dsr+0.01)*randn(),0,0.6);
+    const dti=Math.max(0,A.dti+(0.3*A.dti+0.05)*randn());
+    const dep=clamp(Math.round(A.dep+0.9*randn()),0,5);
+    const vol=clamp(A.vol+0.12*randn(),0,1);
+    const z=-1.1-0.9*Math.log1p(run)+3*(er-0.6)+3*dsr+0.35*dti-0.35*(Math.log(inc)-8.3)+0.15*dep+1.2*vol+0.35*randn();
+    const y=rng()<sigmoid(z)?1:0;
+    out.push({income:inc,expenses:er*inc,savings:run*er*inc,debt:dti*12*inc,debtPay:dsr*inc,deps:dep,vol:vol,y:y});
+  }
+  return out;
+}
+
+function buildDataset(recs,label,synthetic){
+  const F=recs.map(toFeatures), n=F.length;
+  const mean=new Array(D).fill(0), sd=new Array(D).fill(0);
+  F.forEach(f=>f.forEach((v,d)=>{mean[d]+=v/n;}));
+  F.forEach(f=>f.forEach((v,d)=>{sd[d]+=(v-mean[d])*(v-mean[d])/n;}));
+  for(let d=0;d<D;d++) sd[d]=Math.sqrt(sd[d])||1;
+  const X=F.map(f=>f.map((v,d)=>(v-mean[d])/sd[d]));
+  const Y=recs.map(r=>r.y);
+  const rawBase=Y.reduce((a,b)=>a+b,0)/n;
+  return {recs,X,Y,mean,sd,rawBase,base:clamp(rawBase,0.03,0.97),label,synthetic,n};
+}
+
+/* ---------- Dirichlet process mixture (collapsed Gibbs) ---------- */
+const H={k0:0.3,a0:2,b0:1.5,alpha:1.0};
+const EMPTY={n:0,s:0,sum:new Float64Array(D),sq:new Float64Array(D)};
+
+function logPredFeat(c,x){
+  const n=c.n,kn=H.k0+n,an=H.a0+n/2,nu=2*an;
+  let s=D*(lgamma((nu+1)/2)-lgamma(nu/2)-0.5*Math.log(nu*Math.PI));
+  const half=(nu+1)/2,f=(kn+1)/(an*kn);
+  for(let d=0;d<D;d++){
+    const sm=c.sum[d], mun=sm/kn;
+    let bn=H.b0;
+    if(n>0){const xb=sm/n;const ss=Math.max(c.sq[d]-n*xb*xb,0);bn+=0.5*ss+H.k0*n*xb*xb/(2*kn);}
+    const sc2=bn*f, df=x[d]-mun;
+    s+=-0.5*Math.log(sc2)-half*Math.log(1+df*df/(nu*sc2));
+  }
+  return s;
+}
+function pickLogW(lw,len){
+  let mx=-Infinity;for(let i=0;i<len;i++)if(lw[i]>mx)mx=lw[i];
+  let tot=0;const p=new Float64Array(len);
+  for(let i=0;i<len;i++){p[i]=Math.exp(lw[i]-mx);tot+=p[i];}
+  let u=rng()*tot;
+  for(let i=0;i<len;i++){u-=p[i];if(u<=0)return i;}
+  return len-1;
+}
+
+let fitToken=0;
+function fitModel(ds,token,onProgress){
+  return new Promise(resolve=>{
+    rng=mulberry32(99);
+    const N=ds.n,X=ds.X,Y=ds.Y;
+    const strength=3,pa=strength*ds.base,pb=strength*(1-ds.base);
+    const BURN=30,KEEP=60,THIN=2,NDRAW=6,total=BURN+KEEP*THIN;
+    const newCluster=()=>({n:0,s:0,sum:new Float64Array(D),sq:new Float64Array(D)});
+    const add=(c,i)=>{const x=X[i];c.n++;c.s+=Y[i];for(let d=0;d<D;d++){c.sum[d]+=x[d];c.sq[d]+=x[d]*x[d];}};
+    const rem=(c,i)=>{const x=X[i];c.n--;c.s-=Y[i];for(let d=0;d<D;d++){c.sum[d]-=x[d];c.sq[d]-=x[d]*x[d];}};
+    const cl=[],z=new Array(N);
+    for(let k=0;k<6;k++)cl.push(newCluster());
+    for(let i=0;i<N;i++){const c=cl[Math.floor(rng()*6)];add(c,i);z[i]=c;}
+    for(let k=cl.length-1;k>=0;k--)if(cl[k].n===0)cl.splice(k,1);
+    const samples=[];let kSum=0;
+
+    function sweep(){
+      for(let i=0;i<N;i++){
+        const c=z[i];rem(c,i);
+        if(c.n===0)cl.splice(cl.indexOf(c),1);
+        const K=cl.length,lw=new Float64Array(K+1),y=Y[i],x=X[i];
+        for(let k=0;k<K;k++){
+          const ck=cl[k],den=pa+pb+ck.n;
+          const lpy=y?Math.log((pa+ck.s)/den):Math.log((pb+ck.n-ck.s)/den);
+          lw[k]=Math.log(ck.n)+logPredFeat(ck,x)+lpy;
+        }
+        lw[K]=Math.log(H.alpha)+logPredFeat(EMPTY,x)+Math.log((y?pa:pb)/(pa+pb));
+        const pick=pickLogW(lw,K+1);
+        let t;
+        if(pick===K){t=newCluster();cl.push(t);}else t=cl[pick];
+        add(t,i);z[i]=t;
+      }
+    }
+    function save(){
+      samples.push({
+        cl:cl.map(c=>({n:c.n,s:c.s,sum:Array.from(c.sum),sq:Array.from(c.sq),
+          theta:Array.from({length:NDRAW},()=>betaSample(pa+c.s,pb+c.n-c.s))})),
+        newTheta:Array.from({length:NDRAW},()=>betaSample(pa,pb))
+      });
+      kSum+=cl.length;
+    }
+    let iter=0;
+    function finish(){
+      const acc=new Map(cl.map(c=>[c,{inc:0,run:0,er:0}]));
+      for(let i=0;i<N;i++){
+        const a=acc.get(z[i]),r=ds.recs[i];
+        a.inc+=r.income;a.run+=r.savings/Math.max(r.expenses,1);a.er+=r.expenses/Math.max(r.income,1);
+      }
+      const descr=cl.map(c=>{const a=acc.get(c);return{n:c.n,share:c.n/N,rate:c.s/c.n,inc:a.inc/c.n,run:a.run/c.n,er:a.er/c.n};});
+      resolve({samples,descr,nDraw:NDRAW,meanK:kSum/KEEP,N:N,mean:ds.mean,sd:ds.sd,base:ds.rawBase});
+    }
+    function step(){
+      if(token!==fitToken)return;
+      const t0=performance.now();
+      while(iter<total&&performance.now()-t0<40){
+        sweep();iter++;
+        if(iter>BURN&&(iter-BURN)%THIN===0)save();
+      }
+      onProgress(iter/total);
+      if(iter<total)setTimeout(step,0);else finish();
+    }
+    step();
+  });
+}
+
+function predict(M,raw){
+  const x=toFeatures(raw).map((v,d)=>(v-M.mean[d])/M.sd[d]);
+  const S=M.samples,nd=M.nDraw,risks=[];
+  let nov=0,top=null;
+  for(let si=0;si<S.length;si++){
+    const smp=S[si],cl=smp.cl,K=cl.length,lw=new Array(K+1);
+    let mx=-Infinity;
+    for(let k=0;k<K;k++){lw[k]=Math.log(cl[k].n)+logPredFeat(cl[k],x);if(lw[k]>mx)mx=lw[k];}
+    lw[K]=Math.log(H.alpha)+logPredFeat(EMPTY,x);if(lw[K]>mx)mx=lw[K];
+    let tot=0;
+    for(let k=0;k<=K;k++){lw[k]=Math.exp(lw[k]-mx);tot+=lw[k];}
+    for(let k=0;k<=K;k++)lw[k]/=tot;
+    nov+=lw[K];
+    for(let j=0;j<nd;j++){
+      let r=lw[K]*smp.newTheta[j];
+      for(let k=0;k<K;k++)r+=lw[k]*cl[k].theta[j];
+      risks.push(r);
+    }
+    if(si===S.length-1){
+      let bi=0;for(let k=1;k<K;k++)if(lw[k]>lw[bi])bi=k;
+      top={descr:M.descr[bi],w:lw[bi]};
+    }
+  }
+  const sorted=risks.slice().sort((a,b)=>a-b),q=p=>sorted[Math.min(sorted.length-1,Math.floor(p*sorted.length))];
+  const mean=risks.reduce((a,b)=>a+b,0)/risks.length;
+  return{risks,mean,q05:q(0.05),q50:q(0.5),q95:q(0.95),novelty:nov/S.length,top};
+}
+
+/* ---------- inputs ---------- */
+function parseMoney(id){const v=parseFloat(String($(id).value).replace(/[^0-9.]/g,''));return isFinite(v)?v:NaN;}
+function readInputs(){
+  const income=parseMoney('income'),expenses=parseMoney('expenses');
+  if(!(income>0)||!(expenses>0))return null;
+  const zero=v=>isFinite(v)?v:0;
+  const deps=clamp(Math.round(parseFloat($('deps').value)||0),0,6);
+  const vol=parseFloat(document.querySelector('input[name=vol]:checked').value);
+  return{income,expenses,savings:zero(parseMoney('savings')),debt:zero(parseMoney('debt')),debtPay:zero(parseMoney('debtPay')),deps,vol};
+}
+
+/* ---------- rendering ---------- */
+function category(m){
+  if(m<0.15)return{name:'Low exposure',color:'var(--low)',text:'Your cushion looks solid compared with similar households.'};
+  if(m<0.35)return{name:'Moderate exposure',color:'var(--mid)',text:'You have some cushion, but a rough patch could strain it.'};
+  if(m<0.60)return{name:'Elevated exposure',color:'var(--high)',text:'A surprise expense or an income dip could put you under real pressure.'};
+  return{name:'High exposure',color:'var(--high)',text:'Your budget has little room for surprises right now. This is an estimate for a group, not a verdict on you.'};
+}
+const stepDown=v=>v>=0.7?0.55:v>=0.45?0.3:0.1;
+const LEVERS=[
+  {label:r=>`Build savings by ${fmtUSD(3*r.expenses)}, three more months of spending`,apply:r=>({...r,savings:r.savings+3*r.expenses})},
+  {label:()=>'Trim essential spending by 10%',apply:r=>({...r,expenses:r.expenses*0.9})},
+  {label:()=>'Pay down debt by a quarter',apply:r=>({...r,debt:r.debt*0.75,debtPay:r.debtPay*0.75}),show:r=>r.debt>0},
+  {label:()=>'Raise take-home income by 10%',apply:r=>({...r,income:r.income*1.1})},
+  {label:()=>'Make income one step steadier',apply:r=>({...r,vol:stepDown(r.vol)}),show:r=>r.vol>0.2}
+];
+
+function densitySVG(P,base){
+  const W=640,Ht=190,L=14,R=14,top=14,ay=140,pw=W-L-R,n=P.risks.length;
+  const mean=P.mean,sd=Math.sqrt(P.risks.reduce((a,r)=>a+(r-mean)*(r-mean),0)/n);
+  const h=Math.max(0.018,1.06*sd*Math.pow(n,-0.2));
+  const g=u=>Math.exp(-0.5*u*u),ds=[];let mx=0;
+  for(let i=0;i<=100;i++){
+    const x=i/100;let d=0;
+    for(let j=0;j<n;j++){const r=P.risks[j];d+=g((x-r)/h)+g((x+r)/h)+g((x-(2-r))/h);}
+    ds.push(d);if(d>mx)mx=d;
+  }
+  const X=x=>L+pw*x,Y=d=>ay-(d/mx)*(ay-top-6);
+  let line='';ds.forEach((d,i)=>{line+=(i?'L':'M')+X(i/100).toFixed(1)+' '+Y(d).toFixed(1)+' ';});
+  const area=line+`L${X(1)} ${ay} L${X(0)} ${ay} Z`;
+  let ticks='';
+  [0,.25,.5,.75,1].forEach(t=>{
+    ticks+=`<line class="tick" x1="${X(t)}" x2="${X(t)}" y1="${ay}" y2="${ay+7}"/><text x="${X(t)}" y="${ay+24}" text-anchor="${t===0?'start':t===1?'end':'middle'}">${Math.round(t*100)}%</text>`;
+  });
+  return `<svg class="plot" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Spread of the estimated chance of strain. Median ${pct(P.q50)}, 90 percent range ${pct(P.q05)} to ${pct(P.q95)}.">
+    <defs><linearGradient id="rg" gradientUnits="userSpaceOnUse" x1="${L}" x2="${W-R}" y1="0" y2="0">
+      <stop offset="0" stop-color="var(--low)"/><stop offset=".3" stop-color="var(--mid)"/><stop offset=".65" stop-color="var(--high)"/><stop offset="1" stop-color="var(--high)"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#rg)" opacity=".55"/>
+    <path class="curve" d="${line}"/>
+    <line class="ref" x1="${X(base)}" x2="${X(base)}" y1="${top}" y2="${ay}"/>
+    <line class="axis" x1="${L}" x2="${W-R}" y1="${ay}" y2="${ay}"/>
+    ${ticks}
+    <rect class="ci" x="${X(P.q05)}" y="${ay-3}" width="${Math.max(4,pw*(P.q95-P.q05))}" height="6" rx="3"/>
+    <circle class="med" cx="${X(P.q50)}" cy="${ay}" r="7"/>
+  </svg>`;
+}
+
+let MODEL=null,DATA=null;
+function render(){
+  if(!MODEL)return;
+  const out=$('out'),r=readInputs();
+  if(!r){
+    out.innerHTML='<div class="empty">Enter your monthly take-home income and essential spending to see an estimate.</div>';
+    $('bar').hidden=true;$('sr').textContent='';return;
+  }
+  const P=predict(MODEL,r),cat=category(P.mean);
+  const per=Math.round(P.mean*100),lo=Math.round(P.q05*100),hi=Math.round(P.q95*100);
+  const perTxt=per<1?'fewer than 1':'about <strong>'+per+'</strong>';
+  let conf;
+  if(P.novelty>0.25)conf='Your profile is unusual. Few reference households look like yours, so the range is wide and the estimate deserves extra caution.';
+  else if(P.q95-P.q05>0.4)conf='The range is wide because your finances sit between groups that fared very differently.';
+  else conf='Your finances resemble a well-defined group in the reference data, so the range is fairly tight.';
+
+  const results=LEVERS.filter(L=>!L.show||L.show(r)).map(L=>{
+    const p=predict(MODEL,L.apply(r)).mean;return{label:L.label(r),delta:p-P.mean,after:p};
+  }).sort((a,b)=>a.delta-b.delta);
+  const maxGain=Math.max(0.01,-results[0].delta);
+  const lvHTML=results.map(x=>{
+    const gain=-x.delta,flat=Math.abs(x.delta)<0.005;
+    const txt=flat?'little change':(x.delta<0?'−':'+')+Math.round(Math.abs(x.delta)*100)+' points';
+    const w=gain>0.005?Math.round(100*gain/maxGain):0;
+    return `<li><div class="lv-row"><span>${x.label}</span><span class="lv-delta${flat?' flat':''}">${txt}</span></div><div class="track"><div class="fill" style="width:${w}%"></div></div></li>`;
+  }).join('');
+
+  const d=P.top.descr;
+  const similar=`<p>The group you most resemble makes up about ${pct(d.share)} of the reference households. On average they take home ${fmtUSD(d.inc)} a month, keep ${d.run.toFixed(1)} months of spending in savings, and spend ${pct(d.er)} of income on essentials. About ${Math.round(d.rate*100)} in 100 of them ran into strain. The model matches you to this group with roughly ${Math.round(P.top.w*100)}% probability, and spreads the rest across other groups.</p>`;
+
+  $('out').innerHTML=`
+    <div class="hero">
+      <p class="headline">In the reference data, ${perTxt} in 100 households like yours ran into financial strain within a year.</p>
+      <p class="range">Likely range: ${lo} to ${hi} in 100. The model puts 90% of its belief inside this range.</p>
+      ${densitySVG(P,MODEL.base)}
+      <div class="legend">
+        <span><i class="sw-med"></i>Most likely value</span>
+        <span><i class="sw-ci"></i>90% range</span>
+        <span><i class="sw-ref"></i>Reference average, ${pct(MODEL.base)}</span>
+      </div>
+      <p class="cat"><i class="dot" style="background:${cat.color}"></i><span><b>${cat.name}.</b> ${cat.text}</span></p>
+      <p class="conf">${conf}</p>
+    </div>
+    <div class="sec"><h3>Households like yours</h3>${similar}</div>
+    <div class="sec"><h3>What would move the estimate</h3>
+      <p>Each line changes one thing and leaves the rest as entered.</p>
+      <ul class="levers">${lvHTML}</ul>
+      <p class="fine" style="margin-top:12px">These shifts come from patterns in the reference data. They show association, not what will happen for you.</p>
+    </div>`;
+  const summary=`About ${per} in 100, likely range ${lo} to ${hi}`;
+  $('sr').textContent=`Estimated chance of strain: ${summary}. ${cat.name}.`;
+  $('barTxt').textContent=summary;$('bar').hidden=false;
+}
+
+/* ---------- model lifecycle ---------- */
+function setDataNote(){
+  const n=$('dataNote');
+  if(!DATA){n.textContent='';return;}
+  n.textContent=DATA.synthetic
+    ? `Demo data. The ${DATA.n} reference households are simulated, so treat results as an illustration of the method rather than a real assessment. Load a real dataset under "How the estimate is made" to change that.`
+    : `Fitted to ${DATA.label}: ${DATA.n} households, ${pct(DATA.rawBase)} of them experienced strain.`;
+}
+function startFit(){
+  const my=++fitToken;MODEL=null;
+  $('fitting').hidden=false;$('out').hidden=true;$('bar').hidden=true;
+  $('prog').value=0;$('progTxt').textContent='0%';
+  setDataNote();
+  fitModel(DATA,my,p=>{if(my===fitToken){$('prog').value=p;$('progTxt').textContent=Math.round(p*100)+'%';}}).then(m=>{
+    if(my!==fitToken)return;
+    MODEL=m;$('fitting').hidden=true;$('out').hidden=false;
+    $('modelStats').textContent=`Fitted to ${m.N} households. Across the 60 posterior samples the sampler used about ${m.meanK.toFixed(1)} groups on average.`;
+    render();
+  });
+}
+
+/* ---------- CSV upload ---------- */
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(lines.length<2)throw new Error('The file needs a header row and at least one data row.');
+  const head=lines[0].split(',').map(s=>s.trim().toLowerCase().replace(/[^a-z_]/g,''));
+  const need=['income','expenses','savings','debt','debt_payment','dependents','variability','insecure'];
+  const miss=need.filter(k=>head.indexOf(k)<0);
+  if(miss.length)throw new Error('Missing columns: '+miss.join(', ')+'.');
+  const ix={};need.forEach(k=>ix[k]=head.indexOf(k));
+  const recs=[];let skipped=0;
+  for(let i=1;i<lines.length;i++){
+    const c=lines[i].split(',');
+    const v=k=>Number(String(c[ix[k]]).replace(/[$"\s]/g,''));
+    const r={income:v('income'),expenses:v('expenses'),savings:v('savings'),debt:v('debt'),debtPay:v('debt_payment'),deps:v('dependents'),vol:v('variability'),y:v('insecure')};
+    const ok=Object.keys(r).every(k=>isFinite(r[k]))&&r.income>0&&r.expenses>0&&r.savings>=0&&r.debt>=0&&r.debtPay>=0&&r.deps>=0&&(r.y===0||r.y===1);
+    if(ok)recs.push(r);else skipped++;
+  }
+  if(recs.length<60)throw new Error('Only '+recs.length+' usable rows found. At least 60 are needed.');
+  const pos=recs.reduce((a,r)=>a+r.y,0);
+  if(pos<5||recs.length-pos<5)throw new Error('The insecure column needs at least 5 households in each outcome.');
+  let thinned=false,use=recs;
+  if(recs.length>2000){
+    const rr=mulberry32(5),a=recs.slice();
+    for(let i=0;i<2000;i++){const j=i+Math.floor(rr()*(a.length-i));const t=a[i];a[i]=a[j];a[j]=t;}
+    use=a.slice(0,2000);thinned=true;
+  }
+  return{recs:use,skipped,thinned};
+}
+function upMsg(t,err){const m=$('upMsg');m.textContent=t;m.className='msg'+(err?' err':'');}
+$('file').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const res=parseCSV(String(rd.result));
+      DATA=buildDataset(res.recs,'your file',false);
+      upMsg(`Loaded ${res.recs.length} households`+(res.skipped?`, skipped ${res.skipped} unusable rows`:'')+(res.thinned?', thinned to 2,000 rows':'')+'. Refitting now.',false);
+      startFit();
+    }catch(err){upMsg(err.message,true);}
+  };
+  rd.onerror=()=>upMsg('Could not read that file.',true);
+  rd.readAsText(f);
+});
+$('resetDemo').addEventListener('click',()=>{
+  DATA=buildDataset(synth(600,7),'demo',true);$('file').value='';upMsg('Back to the demo data. Refitting now.',false);startFit();
+});
+
+/* ---------- wiring ---------- */
+let tmr;
+const schedule=()=>{clearTimeout(tmr);tmr=setTimeout(render,60);};
+document.querySelectorAll('.inputs input').forEach(el=>el.addEventListener('input',schedule));
+document.querySelectorAll('.money input').forEach(el=>el.addEventListener('blur',()=>{
+  const v=parseMoney(el.id);if(isFinite(v))el.value=v.toLocaleString('en-US');
+}));
+$('barBtn').addEventListener('click',()=>{
+  const smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('results').scrollIntoView({behavior:smooth?'smooth':'auto',block:'start'});
+});
+
+DATA=buildDataset(synth(600,7),'demo',true);
+startFit();
+</script>
+</body>
+</html>
