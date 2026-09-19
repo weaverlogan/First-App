@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finance Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Finance Calculator</h1>
+    <p class="lede">Enter a few numbers. A Bayesian model compares you with a set of reference households and estimates how likely financial strain is over the next year, with its uncertainty shown rather than hidden.</p>
+  </header>
+
+  <div class="app">
+    <section class="inputs" aria-labelledby="in-h">
+      <h2 id="in-h">Your numbers</h2>
+
+      <div class="field">
+        <label for="income">Monthly take-home income</label>
+        <div class="money"><span>$</span><input id="income" type="text" inputmode="decimal" autocomplete="off" value="4,200"></div>
+        <p class="hint">After taxes, all sources.</p>
+      </div>
+      <div class="field">
+        <label for="expenses">Monthly essential spending</label>
+        <div class="money"><span>$</span><input id="expenses" type="text" inputmode="decimal" autocomplete="off" value="3,100"></div>
+        <p class="hint">Housing, food, utilities, transport, insurance, minimum payments.</p>
+      </div>
+      <div class="field">
+        <label for="savings">Savings you can reach quickly</label>
+        <div class="money"><span>$</span><input id="savings" type="text" inputmode="decimal" autocomplete="off" value="3,500"></div>
+        <p class="hint">Checking, savings and cash. Leave out retirement accounts.</p>
+      </div>
+      <div class="field">
+        <label for="debt">Total debt, excluding a mortgage</label>
+        <div class="money"><span>$</span><input id="debt" type="text" inputmode="decimal" autocomplete="off" value="12,000"></div>
+        <p class="hint">Cards, car loans, student loans, personal loans.</p>
+      </div>
+      <div class="field">
+        <label for="debtPay">Monthly debt payments</label>
+        <div class="money"><span>$</span><input id="debtPay" type="text" inputmode="decimal" autocomplete="off" value="380"></div>
+      </div>
+      <div class="field">
+        <label for="deps">People who depend on your income</label>
+        <input id="deps" type="number" min="0" max="6" step="1" value="1" inputmode="numeric">
+        <p class="hint">Children, partner, relatives. Not counting yourself.</p>
+      </div>
+      <div class="field" role="radiogroup" aria-labelledby="vol-l">
+        <span class="lbl" id="vol-l">How steady is your income?</span>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="vol" value="0.1"><span><b>Very steady</b><small>Same pay every period</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.3" checked><span><b>Mostly steady</b><small>Small changes month to month</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.55"><span><b>Variable</b><small>Commission, tips or shifting hours</small></span></label>
+          <label class="opt"><input type="radio" name="vol" value="0.8"><span><b>Irregular</b><small>Gig, seasonal or project work</small></span></label>
+        </div>
+      </div>
+      <p class="privacy">Everything is calculated inside this page. Nothing you type is sent anywhere.</p>
+    </section>
+
+    <section id="results" aria-label="Your estimate">
+      <div id="dataNote" class="note"></div>
+      <div id="fitting" class="fitting" role="status">
+        <span id="fitTxt">Learning from the reference households</span> <span id="progTxt">0%</span>
+        <progress id="prog" max="1" value="0"></progress>
+      </div>
+      <div id="out" hidden></div>
+      <div id="sr" class="sr" aria-live="polite"></div>
+
+      <details class="more">
+        <summary>How the estimate is made, and how to use real data</summary>
+        <div class="more-body">
+          <h3>The model</h3>
+          <p>This is a Bayesian nonparametric model: a Dirichlet process mixture used as a profile regression. Each household is assumed to belong to a hidden group. Every group has its own typical finances and its own chance of financial strain.</p>
+          <p>The number of groups is not fixed in advance. A Dirichlet process (concentration 1) lets the data decide, and always leaves room for a brand-new group when someone matches nobody well. The model is fitted by collapsed Gibbs sampling, with Normal–Gamma priors on the finances and a Beta prior on each group's strain rate.</p>
+          <p>Your estimate averages over 60 posterior samples of the grouping. The range therefore reflects two kinds of doubt: which group you belong to, and how risky each group really is. Profiles far from every group get wider ranges automatically.</p>
+          <p class="fine" id="modelStats"></p>
+
+          <h3>What financial strain means</h3>
+          <p>In the demo data it means being unable to absorb an unexpected cost of about one month of essential spending, or falling behind on bills, at some point within twelve months. If you load your own file, the outcome is whatever your file records.</p>
+
+          <h3>Use your own reference data</h3>
+          <p>The demo households are simulated, so results illustrate the method only. To make them meaningful, load a CSV of real households with a header row and these columns:</p>
+          <p><code>income, expenses, savings, debt, debt_payment, dependents, variability, insecure</code></p>
+          <p class="fine">Income, expenses and debt_payment are monthly dollars. Savings and debt are total dollars. Variability runs from 0 (very steady) to 1 (irregular). Insecure is 1 if the household experienced strain and 0 if not. Use plain numbers without commas or symbols. Files with more than 2,000 rows are randomly thinned to keep the page responsive. The file is read on this device only.</p>
+          <p><input id="file" type="file" accept=".csv,text/csv" aria-label="Choose a CSV file"></p>
+          <p><button class="btn" id="resetDemo" type="button">Use the demo data again</button></p>
+          <p class="msg" id="upMsg" role="status"></p>
+          <p class="fine">This tool is for education. It is not financial advice.</p>
+        </div>
+      </details>
+    </section>
+  </div>
+</main>
+
+<div class="bar" id="bar" hidden>
+  <p id="barTxt"></p>
+  <button class="btn" id="barBtn" type="button">See details</button>
+</div>
+<script src="app.js"></script>
+</body>
+
+</html>
